@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <!-- Load Plotly from a CDN -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <meta charset="utf-8" />
+    <title>Supply Function Plot</title>
+  </head>
+  
+  <body>
+    <div id="myPlot" style="width:800px; height:600px;"></div>
+    
+    <script>
+    // --------------------------------------------------
+    // 1) Parameters (analogous to the Python script)
+    // --------------------------------------------------
+    let a    = [0.1, 65.5, 276, 276, 276];
+    let beta = [675.98072905, 63.39828532, 205.39434745, 205.39434745, 205.39434745];
+    let Qmax = [1000, 2000, 670, 1200, 900];
+    let pTarget = 131;  // the horizontal line value (analogous to "p=131")
+
+    // --------------------------------------------------
+    // 2) Firm supply function (piecewise)
+    // --------------------------------------------------
+    function firmSupply(p, a_i, beta_i, Qmax_i) {
+      // p'_i = a_i + Qmax_i / beta_i
+      let p_i_cap = a_i + (Qmax_i / beta_i);
+
+      if (p < a_i) {
+        return 0;
+      } else if (p < p_i_cap) {
+        return beta_i * (p - a_i);
+      } else {
+        return Qmax_i;
+      }
+    }
+
+    // --------------------------------------------------
+    // 3) Total supply for all firms at price p
+    // --------------------------------------------------
+    function totalSupply(p) {
+      let sumQ = 0;
+      for (let i = 0; i < a.length; i++) {
+        sumQ += firmSupply(p, a[i], beta[i], Qmax[i]);
+      }
+      return sumQ;
+    }
+
+    // --------------------------------------------------
+    // 4) Construct arrays for plotting:
+    //    We want x = Q, y = p
+    // --------------------------------------------------
+    let N = 500;               // number of points
+    let pMin = 0;              // min price
+    // Estimate max price from breakpoints
+    // (or pick a certain multiplier if needed)
+    let breakpoints = [];
+    for (let i = 0; i < a.length; i++) {
+      breakpoints.push(a[i]);                             // p = a_i
+      breakpoints.push(a[i] + Qmax[i] / beta[i]);         // p = a_i + Qmax_i/beta_i
+    }
+    let pMax = Math.max(...breakpoints) * 1.1; // 10% above largest breakpoint
+
+    let pValues = [];
+    let qValues = [];
+    for (let i = 0; i <= N; i++) {
+      let pCurrent = pMin + i * (pMax - pMin) / N;
+      pValues.push(pCurrent);
+      qValues.push(totalSupply(pCurrent));
+    }
+
+    // trace1: the supply curve => x=q, y=p
+    let supplyTrace = {
+      x: qValues,
+      y: pValues,
+      mode: 'lines',
+      name: 'Общо предлагане',
+      line: {color: 'grey'}
+    };
+
+    // trace2: horizontal line p = pTarget
+    // to place a horizontal line, we vary x (0 to max(qValues)) at constant y
+    let maxQ = Math.max(...qValues) * 1.05;
+    let lineX = [0, maxQ];
+    let lineY = [pTarget, pTarget];
+
+    let targetLine = {
+      x: lineX,
+      y: lineY,
+      mode: 'lines',
+      name: 'p=' + pTarget,
+      line: {
+        dash: 'dash',
+        color: 'grey'
+      }
+    };
+
+    // --------------------------------------------------
+    // 5) Plot using Plotly
+    // --------------------------------------------------
+    let layout = {
+      title: 'Supply Function (Interactive)',
+      xaxis: {
+        title: 'Общо предлагане Σ qᵢ(p)',
+        rangemode: 'tozero'
+      },
+      yaxis: {
+        title: 'Пазарна цена (p)',
+        rangemode: 'tozero'
+      },
+      hovermode: 'closest'
+    };
+
+    Plotly.newPlot('myPlot', [supplyTrace, targetLine], layout);
+    </script>
+  </body>
+</html>
