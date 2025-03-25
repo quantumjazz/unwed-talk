@@ -1,3 +1,3 @@
 # unwed-talk
 
-https://quantumjazz.github.io/unwed-talk/slides#1
+https://quantumjazz.github.io/unwed-talk/slides
